@@ -1,0 +1,3 @@
+#!/bin/sh
+
+docker-compose run --rm -e GOOS=darwin -e GOARCH=amd64 app go build -o build/bunshin-darwin-amd64 -v bunshin/main.go
