@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-var configFileName = ".bunshin.yml"
+var configFileName = ".makimono.yml"
 
 func findConfig() (string, error) {
 	dir := "."

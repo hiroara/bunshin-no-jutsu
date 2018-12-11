@@ -7,17 +7,23 @@ import (
 	"strings"
 )
 
-func runSync() {
-	if confirmSync() {
+func runSync(srcDir, destDir string) error {
+	err := checkDestinationAvailability(destDir)
+	if err != nil {
+		return err
+	}
+	if confirmSync(srcDir, destDir) {
 		fmt.Println("YEAH!")
 	} else {
 		fmt.Println("OH..")
 	}
+	return nil
 }
 
-func confirmSync() bool {
+func confirmSync(srcDir, destDir string) bool {
 	reader := bufio.NewReader(os.Stdin)
 	for {
+		fmt.Printf("Sync: %s => %s\n", srcDir, destDir)
 		fmt.Print("Are you sure to sync files? (Y/n): ")
 		text, _ := reader.ReadString('\n')
 		switch strings.ToLower(strings.TrimSpace(text)) {
@@ -30,4 +36,21 @@ func confirmSync() bool {
 			continue
 		}
 	}
+}
+
+func checkDestinationAvailability(path string) error {
+	if path == "" {
+		return fmt.Errorf("Any destination directory is not configured. Please check your configuration file.")
+	}
+	stat, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if !stat.Mode().IsDir() {
+		return fmt.Errorf("`%s` is not a directory. Please check it.", path)
+	}
+	return nil
 }

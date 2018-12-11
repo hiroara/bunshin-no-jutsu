@@ -3,12 +3,13 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+var srcDir string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -19,7 +20,10 @@ This can be used for buckup files to a disk or a directory which is watched by D
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		runSync()
+		destDir := viper.GetString("dest")
+		if err := runSync(srcDir, destDir); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
@@ -27,8 +31,7 @@ This can be used for buckup files to a disk or a directory which is watched by D
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
@@ -38,7 +41,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.bunshin.yaml)")
+	rootCmd.PersistentFlags().StringP("dest", "d", "", "destination directory to sync.")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -49,8 +52,10 @@ func init() {
 func initConfig() {
 	dir, err := findConfig()
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Error: %v", err))
+		log.Fatal(err)
 	}
+
+	srcDir = dir
 
 	// Use config file from the flag.
 	viper.SetConfigFile(filepath.Join(dir, configFileName))
@@ -60,6 +65,5 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
-		fmt.Println("  Target:", dir)
 	}
 }
