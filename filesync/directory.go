@@ -22,11 +22,13 @@ func (d Directory) Sync(dest string) error {
 		return err
 	}
 	for _, t := range ts {
-		dest, err := t.Copy(dest)
+		d, err := t.Copy(dest)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s => %s\n", t.AbsolutePath(), dest.AbsolutePath())
+		if d != nil {
+			fmt.Printf("%s => %s\n", t.AbsolutePath(), d.AbsolutePath())
+		}
 	}
 	return nil
 }
@@ -41,11 +43,30 @@ func (d *Directory) AbsolutePath() string {
 
 func (d *Directory) Copy(destPrefix string) (Target, error) {
 	dest := NewDirectory(destPrefix, d.path)
-	err := dest.MkdirAll()
+	exists, err := dest.exists()
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, nil
+	}
+
+	err = dest.MkdirAll()
 	if err != nil {
 		return nil, err
 	}
 	return dest, nil
+}
+
+func (d *Directory) exists() (bool, error) {
+	_, err := os.Stat(d.AbsolutePath())
+	if err == nil {
+		return true, nil
+	}
+	if !os.IsNotExist(err) {
+		return false, err
+	}
+	return false, nil
 }
 
 func (d *Directory) MkdirAll() error {
