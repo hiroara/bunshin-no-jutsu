@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/hiroara/bunshin-no-jutsu/filesync"
 )
 
 func runSync(srcDir, destDir string) error {
@@ -13,9 +15,7 @@ func runSync(srcDir, destDir string) error {
 		return err
 	}
 	if confirmSync(srcDir, destDir) {
-		fmt.Println("YEAH!")
-	} else {
-		fmt.Println("OH..")
+		filesync.NewDirectory(srcDir).Sync(filesync.NewDirectory(destDir))
 	}
 	return nil
 }
