@@ -10,6 +10,36 @@ import (
 )
 
 func runSync(srcDir, destDir string) error {
+	return run(srcDir, destDir, func(target filesync.Target) error {
+		d, err := target.Copy(destDir)
+		if err != nil {
+			return err
+		}
+		if d != nil {
+			fmt.Printf("%s => %s\n", target.AbsolutePath(), d.AbsolutePath())
+		}
+		return nil
+	})
+}
+
+func run(srcDir, destDir string, f func(filesync.Target) error) error {
+	return withCheck(srcDir, destDir, func() error {
+		d := filesync.NewDirectory(srcDir, ".")
+		ts, err := d.ListTargets()
+		if err != nil {
+			return err
+		}
+		for _, t := range ts {
+			err := f(t)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func withCheck(srcDir, destDir string, f func() error) error {
 	err := checkDestinationAvailability(destDir)
 	if err != nil {
 		return err
@@ -17,7 +47,7 @@ func runSync(srcDir, destDir string) error {
 	if !confirmSync(srcDir, destDir) {
 		return nil
 	}
-	return filesync.NewDirectory(srcDir, ".").Sync(destDir)
+	return f()
 }
 
 func confirmSync(srcDir, destDir string) bool {

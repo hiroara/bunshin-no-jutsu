@@ -1,7 +1,6 @@
 package filesync
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,23 +13,6 @@ type Directory struct {
 
 func NewDirectory(prefix, path string) *Directory {
 	return &Directory{prefix, path}
-}
-
-func (d Directory) Sync(dest string) error {
-	ts, err := d.listTargets()
-	if err != nil {
-		return err
-	}
-	for _, t := range ts {
-		d, err := t.Copy(dest)
-		if err != nil {
-			return err
-		}
-		if d != nil {
-			fmt.Printf("%s => %s\n", t.AbsolutePath(), d.AbsolutePath())
-		}
-	}
-	return nil
 }
 
 func (d *Directory) Path() string {
@@ -73,7 +55,7 @@ func (d *Directory) MkdirAll() error {
 	return os.MkdirAll(d.AbsolutePath(), 0777)
 }
 
-func (d *Directory) listTargets() ([]Target, error) {
+func (d *Directory) ListTargets() ([]Target, error) {
 	fis, err := ioutil.ReadDir(d.Path())
 	if err != nil {
 		return nil, err
@@ -89,7 +71,7 @@ func (d *Directory) listTargets() ([]Target, error) {
 		}
 		switch t := tg.(type) {
 		case *Directory:
-			ts, err := t.listTargets()
+			ts, err := t.ListTargets()
 			if err != nil {
 				return nil, err
 			}
