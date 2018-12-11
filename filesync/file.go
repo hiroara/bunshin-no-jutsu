@@ -28,7 +28,7 @@ func (f *File) Dir() *Directory {
 	return NewDirectory(f.prefix, filepath.Dir(f.path))
 }
 
-func (f *File) Copy(destPrefix string) (Target, error) {
+func (f *File) Copy(destPrefix string, dryrun bool) (Target, error) {
 	t := NewFile(destPrefix, f.path)
 
 	canSkip, err := f.compare(t)
@@ -37,6 +37,10 @@ func (f *File) Copy(destPrefix string) (Target, error) {
 	}
 	if canSkip {
 		return nil, nil
+	}
+
+	if dryrun {
+		return t, nil
 	}
 
 	err = t.Dir().MkdirAll()

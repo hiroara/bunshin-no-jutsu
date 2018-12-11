@@ -7,7 +7,7 @@ import (
 type Target interface {
 	Path() string
 	AbsolutePath() string
-	Copy(destPrefix string) (Target, error)
+	Copy(destPrefix string, dryrun bool) (Target, error)
 }
 
 func NewTarget(prefix, path string) (Target, error) {

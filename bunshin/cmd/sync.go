@@ -9,9 +9,9 @@ import (
 	"github.com/hiroara/bunshin-no-jutsu/filesync"
 )
 
-func runSync(srcDir, destDir string) error {
-	return run(srcDir, destDir, func(target filesync.Target) error {
-		d, err := target.Copy(destDir)
+func runSync(srcDir, destDir string, dryrun bool) error {
+	return run(srcDir, destDir, dryrun, func(target filesync.Target) error {
+		d, err := target.Copy(destDir, dryrun)
 		if err != nil {
 			return err
 		}
@@ -22,8 +22,8 @@ func runSync(srcDir, destDir string) error {
 	})
 }
 
-func run(srcDir, destDir string, f func(filesync.Target) error) error {
-	return withCheck(srcDir, destDir, func() error {
+func run(srcDir, destDir string, dryrun bool, f func(filesync.Target) error) error {
+	return withCheck(srcDir, destDir, dryrun, func() error {
 		d := filesync.NewDirectory(srcDir, ".")
 		ts, err := d.ListTargets()
 		if err != nil {
@@ -39,21 +39,25 @@ func run(srcDir, destDir string, f func(filesync.Target) error) error {
 	})
 }
 
-func withCheck(srcDir, destDir string, f func() error) error {
+func withCheck(srcDir, destDir string, dryrun bool, f func() error) error {
 	err := checkDestinationAvailability(destDir)
 	if err != nil {
 		return err
 	}
-	if !confirmSync(srcDir, destDir) {
+	if !confirmSync(srcDir, destDir, dryrun) {
 		return nil
 	}
 	return f()
 }
 
-func confirmSync(srcDir, destDir string) bool {
+func confirmSync(srcDir, destDir string, dryrun bool) bool {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Printf("Sync: %s => %s\n", srcDir, destDir)
+		if dryrun {
+			fmt.Printf("Sync (dry-run): %s => %s\n", srcDir, destDir)
+		} else {
+			fmt.Printf("Sync: %s => %s\n", srcDir, destDir)
+		}
 		fmt.Print("Are you sure to sync files? (Y/n): ")
 		text, _ := reader.ReadString('\n')
 		switch strings.ToLower(strings.TrimSpace(text)) {

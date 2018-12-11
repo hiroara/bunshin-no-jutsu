@@ -23,7 +23,7 @@ func (d *Directory) AbsolutePath() string {
 	return filepath.Join(d.prefix, d.path) + "/"
 }
 
-func (d *Directory) Copy(destPrefix string) (Target, error) {
+func (d *Directory) Copy(destPrefix string, dryrun bool) (Target, error) {
 	dest := NewDirectory(destPrefix, d.path)
 	exists, err := dest.exists()
 	if err != nil {
@@ -31,6 +31,10 @@ func (d *Directory) Copy(destPrefix string) (Target, error) {
 	}
 	if exists {
 		return nil, nil
+	}
+
+	if dryrun {
+		return dest, nil
 	}
 
 	err = dest.MkdirAll()

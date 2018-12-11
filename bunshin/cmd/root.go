@@ -20,8 +20,13 @@ This can be used for buckup files to a disk or a directory which is watched by D
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+		flags := cmd.Flags()
 		destDir := viper.GetString("dest")
-		if err := runSync(srcDir, destDir); err != nil {
+		dryrun, err := flags.GetBool("dry-run")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := runSync(srcDir, destDir, dryrun); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -41,7 +46,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	rootCmd.PersistentFlags().StringP("dest", "d", "", "destination directory to sync.")
+	rootCmd.PersistentFlags().BoolP("dry-run", "n", false, "run without actual changes.")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
