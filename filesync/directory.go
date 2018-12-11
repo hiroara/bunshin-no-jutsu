@@ -34,13 +34,26 @@ func (d *Directory) listTargets() ([]Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	ts := make([]Target, len(fis))
-	for idx, fi := range fis {
-		t, err := NewTarget(filepath.Join(d.Path(), fi.Name()))
+	targets := make([]Target, 0)
+	for _, fi := range fis {
+		tg, err := NewTarget(filepath.Join(d.Path(), fi.Name()))
 		if err != nil {
 			return nil, err
 		}
-		ts[idx] = t
+		switch t := tg.(type) {
+		case *Directory:
+			ts, err := t.listTargets()
+			if err != nil {
+				return nil, err
+			}
+			if len(ts) > 0 {
+				targets = append(targets, ts...)
+			} else {
+				targets = append(targets, t)
+			}
+		case *File:
+			targets = append(targets, t)
+		}
 	}
-	return ts, nil
+	return targets, nil
 }
