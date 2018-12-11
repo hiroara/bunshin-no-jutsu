@@ -14,10 +14,10 @@ func runSync(srcDir, destDir string) error {
 	if err != nil {
 		return err
 	}
-	if confirmSync(srcDir, destDir) {
-		filesync.NewDirectory(srcDir).Sync(filesync.NewDirectory(destDir))
+	if !confirmSync(srcDir, destDir) {
+		return nil
 	}
-	return nil
+	return filesync.NewDirectory(srcDir, ".").Sync(destDir)
 }
 
 func confirmSync(srcDir, destDir string) bool {
