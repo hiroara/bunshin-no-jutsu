@@ -26,7 +26,11 @@ This can be used for buckup files to a disk or a directory which is watched by D
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := runSync(srcDir, destDir, dryrun); err != nil {
+		del, err := flags.GetBool("delete")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := runSync(srcDir, destDir, dryrun, del); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -47,6 +51,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	rootCmd.PersistentFlags().BoolP("dry-run", "n", false, "run without actual changes.")
+	rootCmd.PersistentFlags().BoolP("delete", "d", false, "delete non-existent files in destination.")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

@@ -24,10 +24,6 @@ func (f *File) AbsolutePath() string {
 	return filepath.Join(f.prefix, f.path)
 }
 
-func (f *File) Dir() *Directory {
-	return NewDirectory(f.prefix, filepath.Dir(f.path))
-}
-
 func (f *File) Copy(destPrefix string, dryrun bool) (Target, error) {
 	t := NewFile(destPrefix, f.path)
 
@@ -41,11 +37,6 @@ func (f *File) Copy(destPrefix string, dryrun bool) (Target, error) {
 
 	if dryrun {
 		return t, nil
-	}
-
-	err = t.Dir().MkdirAll()
-	if err != nil {
-		return nil, err
 	}
 
 	src, err := os.Open(f.AbsolutePath())
@@ -65,6 +56,10 @@ func (f *File) Copy(destPrefix string, dryrun bool) (Target, error) {
 		return nil, err
 	}
 	return t, nil
+}
+
+func (f *File) Delete() error {
+	return os.Remove(f.AbsolutePath())
 }
 
 func (f *File) compare(t *File) (bool, error) {

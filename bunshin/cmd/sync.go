@@ -4,13 +4,19 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/hiroara/bunshin-no-jutsu/filesync"
 )
 
-func runSync(srcDir, destDir string, dryrun bool) error {
-	return run(srcDir, destDir, dryrun, func(target filesync.Target) error {
+func runSync(srcDir, destDir string, dryrun bool, del bool) error {
+	targets, idx, err := listFilesWithIndex(destDir, del)
+	if err != nil {
+		return err
+	}
+
+	err = run(srcDir, destDir, dryrun, del, func(target filesync.Target) error {
 		d, err := target.Copy(destDir, dryrun)
 		if err != nil {
 			return err
@@ -18,12 +24,55 @@ func runSync(srcDir, destDir string, dryrun bool) error {
 		if d != nil {
 			fmt.Printf("%s => %s\n", target.AbsolutePath(), d.AbsolutePath())
 		}
+		delete(idx, target.Path())
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	return deleteFilesWithIndex(targets, idx, dryrun)
 }
 
-func run(srcDir, destDir string, dryrun bool, f func(filesync.Target) error) error {
-	return withCheck(srcDir, destDir, dryrun, func() error {
+func deleteFilesWithIndex(targets []filesync.Target, index map[string]int, dryrun bool) error {
+	indices := make([]int, 0, len(index))
+	for _, i := range index {
+		indices = append(indices, i)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(indices)))
+	for _, i := range indices {
+		t := targets[i]
+		if dryrun {
+			fmt.Printf("%s will be deleted.\n", t.AbsolutePath())
+		} else {
+			err := t.Delete()
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s is deleted.\n", t.AbsolutePath())
+		}
+	}
+	return nil
+}
+
+func listFilesWithIndex(dir string, del bool) ([]filesync.Target, map[string]int, error) {
+	if del {
+		d := filesync.NewDirectory(dir, ".")
+		ts, err := d.ListTargets()
+		if err != nil {
+			return nil, nil, err
+		}
+		indices := make(map[string]int, len(ts))
+		for i, t := range ts {
+			indices[t.Path()] = i
+		}
+		return ts, indices, nil
+	} else {
+		return []filesync.Target{}, make(map[string]int, 0), nil
+	}
+}
+
+func run(srcDir, destDir string, dryrun, del bool, f func(filesync.Target) error) error {
+	return withCheck(srcDir, destDir, dryrun, del, func() error {
 		d := filesync.NewDirectory(srcDir, ".")
 		ts, err := d.ListTargets()
 		if err != nil {
@@ -39,25 +88,21 @@ func run(srcDir, destDir string, dryrun bool, f func(filesync.Target) error) err
 	})
 }
 
-func withCheck(srcDir, destDir string, dryrun bool, f func() error) error {
+func withCheck(srcDir, destDir string, dryrun, del bool, f func() error) error {
 	err := checkDestinationAvailability(destDir)
 	if err != nil {
 		return err
 	}
-	if !confirmSync(srcDir, destDir, dryrun) {
+	if !confirmSync(srcDir, destDir, dryrun, del) {
 		return nil
 	}
 	return f()
 }
 
-func confirmSync(srcDir, destDir string, dryrun bool) bool {
+func confirmSync(srcDir, destDir string, dryrun, del bool) bool {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		if dryrun {
-			fmt.Printf("Sync (dry-run): %s => %s\n", srcDir, destDir)
-		} else {
-			fmt.Printf("Sync: %s => %s\n", srcDir, destDir)
-		}
+		fmt.Printf("%s: %s => %s\n", operationName(dryrun, del), srcDir, destDir)
 		fmt.Print("Are you sure to sync files? (Y/n): ")
 		text, _ := reader.ReadString('\n')
 		switch strings.ToLower(strings.TrimSpace(text)) {
@@ -70,6 +115,17 @@ func confirmSync(srcDir, destDir string, dryrun bool) bool {
 			continue
 		}
 	}
+}
+
+func operationName(dryrun, del bool) string {
+	name := "Sync"
+	if del {
+		name += " with delete"
+	}
+	if dryrun {
+		name += " (dry-run)"
+	}
+	return name
 }
 
 func checkDestinationAvailability(path string) error {

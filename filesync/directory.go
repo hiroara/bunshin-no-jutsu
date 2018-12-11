@@ -44,15 +44,19 @@ func (d *Directory) Copy(destPrefix string, dryrun bool) (Target, error) {
 	return dest, nil
 }
 
+func (d *Directory) Delete() error {
+	return os.Remove(d.AbsolutePath())
+}
+
 func (d *Directory) exists() (bool, error) {
 	_, err := os.Stat(d.AbsolutePath())
 	if err == nil {
 		return true, nil
 	}
-	if !os.IsNotExist(err) {
-		return false, err
+	if os.IsNotExist(err) {
+		return false, nil
 	}
-	return false, nil
+	return false, err
 }
 
 func (d *Directory) MkdirAll() error {
@@ -60,12 +64,17 @@ func (d *Directory) MkdirAll() error {
 }
 
 func (d *Directory) ListTargets() ([]Target, error) {
-	fis, err := ioutil.ReadDir(d.Path())
+	exists, err := d.exists()
 	if err != nil {
 		return nil, err
 	}
-	if len(fis) == 0 {
-		return []Target{d}, nil
+	if !exists {
+		return []Target{}, nil
+	}
+
+	fis, err := ioutil.ReadDir(d.AbsolutePath())
+	if err != nil {
+		return nil, err
 	}
 	targets := make([]Target, 0)
 	for _, fi := range fis {
@@ -75,6 +84,7 @@ func (d *Directory) ListTargets() ([]Target, error) {
 		}
 		switch t := tg.(type) {
 		case *Directory:
+			targets = append(targets, t)
 			ts, err := t.ListTargets()
 			if err != nil {
 				return nil, err
