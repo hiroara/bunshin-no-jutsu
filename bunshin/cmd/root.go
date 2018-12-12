@@ -5,6 +5,7 @@ import (
 	"log"
 	"path/filepath"
 
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -22,6 +23,10 @@ This can be used for buckup files to a disk or a directory which is watched by D
 	Run: func(cmd *cobra.Command, args []string) {
 		flags := cmd.Flags()
 		destDir := viper.GetString("dest")
+		destDir, err := homedir.Expand(destDir)
+		if err != nil {
+			log.Fatal(err)
+		}
 		dryrun, err := flags.GetBool("dry-run")
 		if err != nil {
 			log.Fatal(err)
