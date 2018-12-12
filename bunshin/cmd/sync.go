@@ -16,6 +16,12 @@ func runSync(srcDir, destDir string, dryrun bool, del bool) error {
 		return err
 	}
 
+	if !dryrun {
+		err = os.MkdirAll(destDir, 0777)
+		if err != nil {
+			return err
+		}
+	}
 	err = run(srcDir, destDir, dryrun, del, func(target filesync.Target) error {
 		d, err := target.Copy(destDir, dryrun)
 		if err != nil {

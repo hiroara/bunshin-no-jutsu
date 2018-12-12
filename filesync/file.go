@@ -55,6 +55,15 @@ func (f *File) Copy(destPrefix string, dryrun bool) (Target, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	stat, err := os.Stat(f.AbsolutePath())
+	if err != nil {
+		return nil, err
+	}
+	err = os.Chmod(t.AbsolutePath(), stat.Mode())
+	if err != nil {
+		return nil, err
+	}
 	return t, nil
 }
 
@@ -63,30 +72,15 @@ func (f *File) Delete() error {
 }
 
 func (f *File) compare(t *File) (bool, error) {
-	ffp, err := f.fingerprint()
+	ffp, err := newFingerprint(f)
 	if err != nil {
 		return false, err
 	}
-	tfp, err := t.fingerprint()
+	tfp, err := newFingerprint(t)
 	if err != nil {
 		return false, err
 	}
 	return ffp.match(tfp), nil
-}
-
-func (f *File) fingerprint() (*fingerprint, error) {
-	exists, size, err := f.size()
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return &fingerprint{false, 0, nil}, nil
-	}
-	sum, err := f.checksum()
-	if err != nil {
-		return nil, err
-	}
-	return &fingerprint{true, size, sum}, nil
 }
 
 func (f *File) checksum() ([]byte, error) {
@@ -99,15 +93,4 @@ func (f *File) checksum() ([]byte, error) {
 		return nil, err
 	}
 	return h.Sum(nil), nil
-}
-
-func (f *File) size() (bool, int64, error) {
-	stat, err := os.Stat(f.AbsolutePath())
-	if err == nil {
-		return true, stat.Size(), nil
-	}
-	if os.IsNotExist(err) {
-		return false, 0, nil
-	}
-	return false, 0, err
 }

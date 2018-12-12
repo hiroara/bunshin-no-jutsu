@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 type Directory struct {
@@ -25,7 +26,7 @@ func (d *Directory) AbsolutePath() string {
 
 func (d *Directory) Copy(destPrefix string, dryrun bool) (Target, error) {
 	dest := NewDirectory(destPrefix, d.path)
-	exists, err := dest.exists()
+	_, exists, err := stat(dest)
 	if err != nil {
 		return nil, err
 	}
@@ -33,11 +34,7 @@ func (d *Directory) Copy(destPrefix string, dryrun bool) (Target, error) {
 		return nil, nil
 	}
 
-	if dryrun {
-		return dest, nil
-	}
-
-	err = dest.MkdirAll()
+	err = d.MkdirAll(destPrefix, dryrun)
 	if err != nil {
 		return nil, err
 	}
@@ -48,23 +45,52 @@ func (d *Directory) Delete() error {
 	return os.Remove(d.AbsolutePath())
 }
 
-func (d *Directory) exists() (bool, error) {
-	_, err := os.Stat(d.AbsolutePath())
-	if err == nil {
-		return true, nil
+func (d *Directory) MkdirAll(destPrefix string, dryrun bool) error {
+	if dryrun {
+		return nil
 	}
-	if os.IsNotExist(err) {
-		return false, nil
+	for _, part := range splitComponents(d.path) {
+		path := filepath.Join(destPrefix, part)
+		srcStat, err := os.Stat(filepath.Join(d.prefix, part))
+		if err != nil {
+			return err
+		}
+		destStat, err := os.Stat(path)
+		doesNotExist := os.IsNotExist(err)
+		if doesNotExist {
+			err = os.Mkdir(path, 0777)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
+		if doesNotExist || destStat.Mode() != srcStat.Mode() {
+			os.Chmod(path, srcStat.Mode())
+		}
 	}
-	return false, err
+	return nil
 }
 
-func (d *Directory) MkdirAll() error {
-	return os.MkdirAll(d.AbsolutePath(), 0777)
+func (d *Directory) checksum() ([]byte, error) {
+	return []byte{}, nil
+}
+
+func splitComponents(path string) []string {
+	targets := []string{path}
+	for {
+		last := targets[len(targets)-1]
+		parent := filepath.Dir(last)
+		if parent == last {
+			sort.Sort(sort.Reverse(sort.StringSlice(targets)))
+			return targets[:len(targets)-1]
+		}
+		targets = append(targets, parent)
+	}
 }
 
 func (d *Directory) ListTargets() ([]Target, error) {
-	exists, err := d.exists()
+	_, exists, err := stat(d)
 	if err != nil {
 		return nil, err
 	}
