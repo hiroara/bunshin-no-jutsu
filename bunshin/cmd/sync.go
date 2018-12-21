@@ -22,21 +22,28 @@ func runSync(srcDir, destDir string, dryrun bool, del bool) error {
 			return err
 		}
 	}
-	err = run(srcDir, destDir, dryrun, del, func(target filesync.Target) error {
-		d, err := target.Copy(destDir, dryrun)
+	return withCheck(srcDir, destDir, dryrun, del, func() error {
+		err = run(srcDir, destDir, dryrun, del, func(target filesync.Target) error {
+			d, newFile, err := filesync.Copy(target.Prefix(), destDir, target.Path(), dryrun)
+			if err != nil {
+				return err
+			}
+			delete(idx, target.Path())
+			if d == nil {
+				return nil
+			}
+			if newFile {
+				fmt.Printf("%s => %s (new)\n", target.AbsolutePath(), d.AbsolutePath())
+			} else {
+				fmt.Printf("%s => %s\n", target.AbsolutePath(), d.AbsolutePath())
+			}
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-		if d != nil {
-			fmt.Printf("%s => %s\n", target.AbsolutePath(), d.AbsolutePath())
-		}
-		delete(idx, target.Path())
-		return nil
+		return deleteFilesWithIndex(targets, idx, dryrun)
 	})
-	if err != nil {
-		return err
-	}
-	return deleteFilesWithIndex(targets, idx, dryrun)
 }
 
 func deleteFilesWithIndex(targets []filesync.Target, index map[string]int, dryrun bool) error {
@@ -78,20 +85,18 @@ func listFilesWithIndex(dir string, del bool) ([]filesync.Target, map[string]int
 }
 
 func run(srcDir, destDir string, dryrun, del bool, f func(filesync.Target) error) error {
-	return withCheck(srcDir, destDir, dryrun, del, func() error {
-		d := filesync.NewDirectory(srcDir, ".")
-		ts, err := d.ListTargets()
+	d := filesync.NewDirectory(srcDir, ".")
+	ts, err := d.ListTargets()
+	if err != nil {
+		return err
+	}
+	for _, t := range ts {
+		err := f(t)
 		if err != nil {
 			return err
 		}
-		for _, t := range ts {
-			err := f(t)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func withCheck(srcDir, destDir string, dryrun, del bool, f func() error) error {

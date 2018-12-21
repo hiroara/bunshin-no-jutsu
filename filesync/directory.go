@@ -16,6 +16,10 @@ func NewDirectory(prefix, path string) *Directory {
 	return &Directory{prefix, path}
 }
 
+func (d *Directory) Prefix() string {
+	return d.prefix
+}
+
 func (d *Directory) Path() string {
 	return d.path + "/"
 }
@@ -24,14 +28,18 @@ func (d *Directory) AbsolutePath() string {
 	return filepath.Join(d.prefix, d.path) + "/"
 }
 
-func (d *Directory) Copy(destPrefix string, dryrun bool) (Target, error) {
+func (d *Directory) createCopy(destPrefix string, dryrun bool) (Target, error) {
 	dest := NewDirectory(destPrefix, d.path)
-	_, exists, err := stat(dest)
+	_, exists, err := stat(dest.AbsolutePath())
 	if err != nil {
 		return nil, err
 	}
 	if exists {
 		return nil, nil
+	}
+
+	if dryrun {
+		return dest, nil
 	}
 
 	err = d.MkdirAll(destPrefix, dryrun)
@@ -90,7 +98,7 @@ func splitComponents(path string) []string {
 }
 
 func (d *Directory) ListTargets() ([]Target, error) {
-	_, exists, err := stat(d)
+	_, exists, err := stat(d.AbsolutePath())
 	if err != nil {
 		return nil, err
 	}

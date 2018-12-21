@@ -2,45 +2,31 @@ package filesync
 
 import (
 	"os"
+	"path/filepath"
 )
 
 type fingerprint struct {
-	existence bool
-	stat      os.FileInfo
-	checksum  []byte
+	target   Target
+	stat     os.FileInfo
+	checksum []byte
 }
 
-func newFingerprint(t Target) (*fingerprint, error) {
-	stat, exists, err := stat(t)
+func newFingerprint(prefix, path string) (*fingerprint, bool, error) {
+	absPath := filepath.Join(prefix, path)
+	stat, exists, err := stat(absPath)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if !exists {
-		return &fingerprint{false, nil, nil}, nil
+		return &fingerprint{nil, nil, nil}, false, nil
+	}
+	t, err := NewTarget(prefix, path)
+	if err != nil {
+		return nil, false, err
 	}
 	sum, err := t.checksum()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return &fingerprint{true, stat, sum}, nil
-}
-
-func (fp *fingerprint) match(other *fingerprint) bool {
-	return fp.existence == other.existence && fp.matchStat(other) && fp.matchChecksum(other)
-}
-
-func (fp *fingerprint) matchStat(other *fingerprint) bool {
-	return fp.stat.IsDir() == other.stat.IsDir() && fp.stat.Mode() == other.stat.Mode() && fp.stat.Size() == other.stat.Size()
-}
-
-func (fp *fingerprint) matchChecksum(other *fingerprint) bool {
-	if len(fp.checksum) != len(other.checksum) {
-		return false
-	}
-	for idx, fc := range fp.checksum {
-		if fc != other.checksum[idx] {
-			return false
-		}
-	}
-	return true
+	return &fingerprint{t, stat, sum}, true, nil
 }
