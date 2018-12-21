@@ -22,11 +22,6 @@ This can be used for buckup files to a disk or a directory which is watched by D
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		flags := cmd.Flags()
-		destDir := viper.GetString("dest")
-		destDir, err := homedir.Expand(destDir)
-		if err != nil {
-			log.Fatal(err)
-		}
 		dryrun, err := flags.GetBool("dry-run")
 		if err != nil {
 			log.Fatal(err)
@@ -35,8 +30,17 @@ This can be used for buckup files to a disk or a directory which is watched by D
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := runSync(srcDir, destDir, dryrun, del); err != nil {
-			log.Fatal(err)
+		for _, dir := range viper.GetStringSlice("locations") {
+			dir, err := homedir.Expand(dir)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if srcDir == dir {
+				continue
+			}
+			if err := runSync(srcDir, dir, dryrun, del); err != nil {
+				log.Fatal(err)
+			}
 		}
 	},
 }
