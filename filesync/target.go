@@ -26,24 +26,26 @@ func NewTarget(prefix, path string) (Target, error) {
 	}
 }
 
-func Copy(srcPrefix, destPrefix, path string, dryrun bool) (Target, bool, error) {
-	srcFp, _, err := newFingerprint(srcPrefix, path)
+func Copy(src Target, destPrefix string, dryrun bool) (bool, Target, error) {
+	destFp, destExists, err := newFingerprint(destPrefix, src.Path())
 	if err != nil {
-		return nil, false, err
-	}
-	destFp, destExists, err := newFingerprint(destPrefix, path)
-	if err != nil {
-		return nil, false, err
+		return false, nil, err
 	}
 	if destExists {
-		dest, err := newDiff(srcFp, destFp).copyTarget(dryrun)
-		return dest, false, err
+		d, err := copyWithDiff(src, destFp, dryrun)
+		return false, d, err
+	} else {
+		d, err := src.createCopy(destPrefix, dryrun)
+		return true, d, err
 	}
-	dest, err := srcFp.target.createCopy(destPrefix, dryrun)
+}
+
+func copyWithDiff(src Target, destFingerprint *fingerprint, dryrun bool) (Target, error) {
+	srcFp, _, err := newFingerprint(src.Prefix(), src.Path())
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	return dest, true, nil
+	return newDiff(srcFp, destFingerprint).copyTarget(dryrun)
 }
 
 func stat(path string) (os.FileInfo, bool, error) {

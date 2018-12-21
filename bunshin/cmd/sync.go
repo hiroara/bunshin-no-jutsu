@@ -24,7 +24,7 @@ func runSync(srcDir, destDir string, dryrun bool, del bool) error {
 	}
 	return withCheck(srcDir, destDir, dryrun, del, func() error {
 		err = run(srcDir, destDir, dryrun, del, func(target filesync.Target) error {
-			d, newFile, err := filesync.Copy(target.Prefix(), destDir, target.Path(), dryrun)
+			newFile, d, err := filesync.Copy(target, destDir, dryrun)
 			if err != nil {
 				return err
 			}
