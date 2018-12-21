@@ -11,18 +11,18 @@ import (
 )
 
 func runSync(srcDir, destDir string, dryrun bool, del bool) error {
-	targets, idx, err := listFilesWithIndex(destDir, del)
-	if err != nil {
-		return err
-	}
-
-	if !dryrun {
-		err = os.MkdirAll(destDir, 0777)
+	return withCheck(srcDir, destDir, dryrun, del, func() error {
+		targets, idx, err := listFilesWithIndex(destDir, del)
 		if err != nil {
 			return err
 		}
-	}
-	return withCheck(srcDir, destDir, dryrun, del, func() error {
+
+		if !dryrun {
+			err = os.MkdirAll(destDir, 0777)
+			if err != nil {
+				return err
+			}
+		}
 		err = run(srcDir, destDir, dryrun, del, func(target filesync.Target) error {
 			newFile, d, err := filesync.Copy(target, destDir, dryrun)
 			if err != nil {
