@@ -20,6 +20,10 @@ func (f *File) Prefix() string {
 	return f.prefix
 }
 
+func (f *File) String() string {
+	return filepath.Join(f.prefix, f.path)
+}
+
 func (f *File) Path() string {
 	return f.path
 }
@@ -52,14 +56,13 @@ func (f *File) createCopy(destPrefix string, dryrun bool) (Target, error) {
 		return nil, err
 	}
 
-	stat, err := os.Stat(f.AbsolutePath())
-	if err != nil {
-		return nil, err
-	}
-	return t, os.Chmod(t.AbsolutePath(), stat.Mode())
+	return t, syncMode(f, t)
 }
 
-func (f *File) Delete() error {
+func (f *File) Delete(dryrun bool) error {
+	if dryrun {
+		return nil
+	}
 	return os.Remove(f.AbsolutePath())
 }
 

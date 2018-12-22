@@ -33,20 +33,20 @@ func runSync(srcDir, destDir string, dryrun bool, del bool) error {
 				return nil
 			}
 			if newFile {
-				fmt.Printf("%s => %s (new)\n", target.AbsolutePath(), d.AbsolutePath())
+				fmt.Printf("%s => %s (new)\n", target.String(), d.String())
 			} else {
-				fmt.Printf("%s => %s\n", target.AbsolutePath(), d.AbsolutePath())
+				fmt.Printf("%s => %s\n", target.String(), d.String())
 			}
 			return nil
 		})
 		if err != nil {
 			return err
 		}
-		return deleteFilesWithIndex(targets, idx, dryrun)
+		return deleteFilesWithIndex(srcDir, targets, idx, dryrun)
 	})
 }
 
-func deleteFilesWithIndex(targets []filesync.Target, index map[string]int, dryrun bool) error {
+func deleteFilesWithIndex(srcPrefix string, targets []filesync.Target, index map[string]int, dryrun bool) error {
 	indices := make([]int, 0, len(index))
 	for _, i := range index {
 		indices = append(indices, i)
@@ -54,14 +54,17 @@ func deleteFilesWithIndex(targets []filesync.Target, index map[string]int, dryru
 	sort.Sort(sort.Reverse(sort.IntSlice(indices)))
 	for _, i := range indices {
 		t := targets[i]
+		if filesync.ContainsSymlink(srcPrefix, t.Path()) {
+			continue
+		}
+		err := t.Delete(dryrun)
+		if err != nil {
+			return err
+		}
 		if dryrun {
-			fmt.Printf("%s will be deleted.\n", t.AbsolutePath())
+			fmt.Printf("%s will be deleted.\n", t.String())
 		} else {
-			err := t.Delete()
-			if err != nil {
-				return err
-			}
-			fmt.Printf("%s is deleted.\n", t.AbsolutePath())
+			fmt.Printf("%s is deleted.\n", t.String())
 		}
 	}
 	return nil

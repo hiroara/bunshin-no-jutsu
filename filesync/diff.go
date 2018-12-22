@@ -1,6 +1,7 @@
 package filesync
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -12,10 +13,11 @@ type diff struct {
 }
 
 func newDiff(srcFingerprint, destFingerprint *fingerprint) *diff {
+	srcIsSymlink := srcFingerprint.stat.Mode()&os.ModeSymlink != 0
 	return &diff{
 		srcFingerprint, destFingerprint,
 		matchChecksum(srcFingerprint.checksum, destFingerprint.checksum),
-		srcFingerprint.stat.Mode() == destFingerprint.stat.Mode(),
+		srcIsSymlink || srcFingerprint.stat.Mode() == destFingerprint.stat.Mode(),
 	}
 }
 
@@ -50,17 +52,19 @@ func (d *diff) syncMode(dryrun bool) (Target, error) {
 	if err != nil {
 		return nil, err
 	}
+	stat, err := os.Lstat(dest.AbsolutePath())
+	fmt.Printf("%v %v %v\n", d.srcFingerprint.stat.Mode(), stat.Mode(), err)
 	return dest, nil
 }
 
 func (d *diff) overwrite(dryrun bool) (Target, error) {
 	dest := d.destFingerprint.target
-	if dryrun {
-		return dest, nil
-	}
-	err := dest.Delete()
+	err := dest.Delete(dryrun)
 	if err != nil {
 		return nil, err
+	}
+	if dryrun {
+		return dest, nil
 	}
 	_, err = d.srcFingerprint.target.createCopy(dest.Prefix(), dryrun)
 	if err != nil {

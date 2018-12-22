@@ -9,6 +9,7 @@ type fingerprint struct {
 	target   Target
 	stat     os.FileInfo
 	checksum []byte
+	symlink  bool
 }
 
 func newFingerprint(prefix, path string) (*fingerprint, bool, error) {
@@ -18,7 +19,7 @@ func newFingerprint(prefix, path string) (*fingerprint, bool, error) {
 		return nil, false, err
 	}
 	if !exists {
-		return &fingerprint{nil, nil, nil}, false, nil
+		return &fingerprint{nil, nil, nil, false}, false, nil
 	}
 	t, err := NewTarget(prefix, path)
 	if err != nil {
@@ -28,5 +29,5 @@ func newFingerprint(prefix, path string) (*fingerprint, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
-	return &fingerprint{t, stat, sum}, true, nil
+	return &fingerprint{t, stat, sum, stat.Mode()&os.ModeSymlink != 0}, true, nil
 }

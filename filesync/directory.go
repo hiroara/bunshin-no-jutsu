@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 )
 
 type Directory struct {
@@ -20,12 +19,16 @@ func (d *Directory) Prefix() string {
 	return d.prefix
 }
 
+func (d *Directory) String() string {
+	return filepath.Join(d.prefix, d.path) + "/"
+}
+
 func (d *Directory) Path() string {
-	return d.path + "/"
+	return d.path
 }
 
 func (d *Directory) AbsolutePath() string {
-	return filepath.Join(d.prefix, d.path) + "/"
+	return filepath.Join(d.prefix, d.path)
 }
 
 func (d *Directory) createCopy(destPrefix string, dryrun bool) (Target, error) {
@@ -49,8 +52,11 @@ func (d *Directory) createCopy(destPrefix string, dryrun bool) (Target, error) {
 	return dest, nil
 }
 
-func (d *Directory) Delete() error {
-	return os.Remove(d.AbsolutePath())
+func (d *Directory) Delete(dryrun bool) error {
+	if dryrun {
+		return nil
+	}
+	return os.RemoveAll(d.AbsolutePath())
 }
 
 func (d *Directory) MkdirAll(destPrefix string, dryrun bool) error {
@@ -84,19 +90,6 @@ func (d *Directory) checksum() ([]byte, error) {
 	return []byte{}, nil
 }
 
-func splitComponents(path string) []string {
-	targets := []string{path}
-	for {
-		last := targets[len(targets)-1]
-		parent := filepath.Dir(last)
-		if parent == last {
-			sort.Sort(sort.Reverse(sort.StringSlice(targets)))
-			return targets[:len(targets)-1]
-		}
-		targets = append(targets, parent)
-	}
-}
-
 func (d *Directory) ListTargets() ([]Target, error) {
 	_, exists, err := stat(d.AbsolutePath())
 	if err != nil {
@@ -124,6 +117,8 @@ func (d *Directory) ListTargets() ([]Target, error) {
 				return nil, err
 			}
 			targets = append(targets, ts...)
+		case *Symlink:
+			targets = append(targets, t)
 		case *File:
 			targets = append(targets, t)
 		}
