@@ -1,1 +1,3 @@
-# bunshin-no-jutsu
+# Bunshin no Jutsu
+
+![Bunshin no Jutsu](./images/ninja.svg)
