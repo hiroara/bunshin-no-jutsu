@@ -52,7 +52,7 @@ func (s *Symlink) createCopy(destPrefix string, dryrun bool) (Target, error) {
 		return nil, err
 	}
 
-	return d, syncMode(s, d)
+	return d, nil
 }
 
 func (s *Symlink) checksum() ([]byte, error) {

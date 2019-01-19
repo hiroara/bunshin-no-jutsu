@@ -8,11 +8,17 @@ import (
 	"strings"
 
 	"github.com/hiroara/bunshin-no-jutsu/filesync"
+	"github.com/hiroara/bunshin-no-jutsu/ignore"
 )
 
-func runSync(srcDir, destDir string, dryrun bool, del bool) error {
+func runSync(srcDir, destDir string, dryrun bool, del bool, ignLines []string) error {
 	return withCheck(srcDir, destDir, dryrun, del, func() error {
-		targets, idx, err := listFilesWithIndex(destDir, del)
+		im, err := ignore.Parse(ignLines)
+		if err != nil {
+			return err
+		}
+
+		targets, idx, err := listFilesWithIndex(destDir, del, im)
 		if err != nil {
 			return err
 		}
@@ -23,7 +29,7 @@ func runSync(srcDir, destDir string, dryrun bool, del bool) error {
 				return err
 			}
 		}
-		err = run(srcDir, destDir, dryrun, del, func(target filesync.Target) error {
+		err = run(srcDir, destDir, dryrun, del, im, func(target filesync.Target) error {
 			newFile, d, err := filesync.Copy(target, destDir, dryrun)
 			if err != nil {
 				return err
@@ -70,10 +76,10 @@ func deleteFilesWithIndex(srcPrefix string, targets []filesync.Target, index map
 	return nil
 }
 
-func listFilesWithIndex(dir string, del bool) ([]filesync.Target, map[string]int, error) {
+func listFilesWithIndex(dir string, del bool, im *ignore.Matcher) ([]filesync.Target, map[string]int, error) {
 	if del {
 		d := filesync.NewDirectory(dir, ".")
-		ts, err := d.ListTargets()
+		ts, err := d.ListTargets(im)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -87,9 +93,9 @@ func listFilesWithIndex(dir string, del bool) ([]filesync.Target, map[string]int
 	}
 }
 
-func run(srcDir, destDir string, dryrun, del bool, f func(filesync.Target) error) error {
+func run(srcDir, destDir string, dryrun, del bool, im *ignore.Matcher, f func(filesync.Target) error) error {
 	d := filesync.NewDirectory(srcDir, ".")
-	ts, err := d.ListTargets()
+	ts, err := d.ListTargets(im)
 	if err != nil {
 		return err
 	}

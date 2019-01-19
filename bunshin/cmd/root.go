@@ -30,6 +30,7 @@ This can be used for buckup files to a disk or a directory which is watched by D
 		if err != nil {
 			log.Fatal(err)
 		}
+		ignore := viper.GetStringSlice("ignore")
 		for _, dir := range viper.GetStringSlice("locations") {
 			dir, err := homedir.Expand(dir)
 			if err != nil {
@@ -38,7 +39,7 @@ This can be used for buckup files to a disk or a directory which is watched by D
 			if srcDir == dir {
 				continue
 			}
-			if err := runSync(srcDir, dir, dryrun, del); err != nil {
+			if err := runSync(srcDir, dir, dryrun, del, ignore); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -82,7 +83,9 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	err = viper.ReadInConfig()
+	if err != nil {
+		log.Fatal(err)
 	}
+	fmt.Println("Using config file:", viper.ConfigFileUsed())
 }

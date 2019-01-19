@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/hiroara/bunshin-no-jutsu/ignore"
 )
 
 type Directory struct {
@@ -90,7 +92,7 @@ func (d *Directory) checksum() ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (d *Directory) ListTargets() ([]Target, error) {
+func (d *Directory) ListTargets(im *ignore.Matcher) ([]Target, error) {
 	_, exists, err := stat(d.AbsolutePath())
 	if err != nil {
 		return nil, err
@@ -109,10 +111,13 @@ func (d *Directory) ListTargets() ([]Target, error) {
 		if err != nil {
 			return nil, err
 		}
+		if im.Match(tg) {
+			continue
+		}
 		switch t := tg.(type) {
 		case *Directory:
 			targets = append(targets, t)
-			ts, err := t.ListTargets()
+			ts, err := t.ListTargets(im)
 			if err != nil {
 				return nil, err
 			}
