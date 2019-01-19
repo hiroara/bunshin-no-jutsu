@@ -16,7 +16,7 @@ type Matcher struct {
 }
 
 func Parse(lines []string) (*Matcher, error) {
-	rules, err := ignore.Parse(strings.NewReader(strings.Join(lines, "\n")))
+	rules, err := ignore.Parse(strings.NewReader(joinLines(lines)))
 	if err != nil {
 		return nil, err
 	}
@@ -29,4 +29,18 @@ func (r *Matcher) Match(t Target) bool {
 		return false
 	}
 	return r.rules.Ignore(t.Path(), fi)
+}
+
+func joinLines(lines []string) string {
+	var b strings.Builder
+	for idx, l := range lines {
+		if strings.HasPrefix(l, "!") {
+			continue // TODO: support accept pattern
+		}
+		if idx != 0 {
+			b.WriteString("\n")
+		}
+		b.WriteString(l)
+	}
+	return b.String()
 }
