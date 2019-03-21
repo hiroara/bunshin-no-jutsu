@@ -39,10 +39,13 @@ This can be used for buckup files to a disk or a directory which is watched by D
 				continue
 			}
 			fmt.Printf("Start syncing: %s\n", moyais)
-			if err := runSync(srcDir, dir, dryrun, del, ignore); err != nil {
+			executed, err := runSync(srcDir, dir, dryrun, del, ignore)
+			if err != nil {
 				log.Fatal(err)
 			}
-			moyais += "🗿"
+			if executed {
+				moyais += "🗿"
+			}
 		}
 		fmt.Printf("Finished: %s\n", moyais)
 	},

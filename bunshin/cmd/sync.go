@@ -11,7 +11,7 @@ import (
 	"github.com/hiroara/bunshin-no-jutsu/ignore"
 )
 
-func runSync(srcDir, destDir string, dryrun bool, del bool, ignLines []string) error {
+func runSync(srcDir, destDir string, dryrun bool, del bool, ignLines []string) (bool, error) {
 	return withCheck(srcDir, destDir, dryrun, del, func() error {
 		im, err := ignore.Parse(ignLines)
 		if err != nil {
@@ -108,15 +108,15 @@ func run(srcDir, destDir string, dryrun, del bool, im *ignore.Matcher, f func(fi
 	return nil
 }
 
-func withCheck(srcDir, destDir string, dryrun, del bool, f func() error) error {
+func withCheck(srcDir, destDir string, dryrun, del bool, f func() error) (bool, error) {
 	err := checkDestinationAvailability(destDir)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !confirmSync(srcDir, destDir, dryrun, del) {
-		return nil
+		return false, nil
 	}
-	return f()
+	return true, f()
 }
 
 func confirmSync(srcDir, destDir string, dryrun, del bool) bool {
