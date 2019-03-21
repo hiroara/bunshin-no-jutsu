@@ -21,6 +21,7 @@ This can be used for buckup files to a disk or a directory which is watched by D
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+		moyais := "🗿"
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 		flags := cmd.Flags()
 		dryrun, err := flags.GetBool("dry-run")
@@ -37,10 +38,13 @@ This can be used for buckup files to a disk or a directory which is watched by D
 			if srcDir == dir {
 				continue
 			}
+			fmt.Printf("Start syncing: %s\n", moyais)
 			if err := runSync(srcDir, dir, dryrun, del, ignore); err != nil {
 				log.Fatal(err)
 			}
+			moyais += "🗿"
 		}
+		fmt.Printf("Finished: %s\n", moyais)
 	},
 }
 
