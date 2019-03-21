@@ -2,13 +2,27 @@
 
 ![Bunshin no Jutsu](./images/ninja.svg)
 
-Bunshin-no-Jutsu is a CLI to make copies of your files.
+Bunshin-no-Jutsu is a CLI to make complete copies of your files.
 You can use this for making backup :)
-
-For example, you can copy your project under a directory which syncs with Dropbox.
 
 This tool works as a configuration-oriented tool.
 The name of the configuration file is `.makimono.yml` :scroll:
+
+## Usecase
+
+### Working with Dropbox
+
+For example, you can copy your project under a directory which syncs with Dropbox.
+
+Dropbox is sometimes heavy especially when we have many files, and doing many writing/deleting files.
+(e.g. Developing a nodejs project under Dropbox directory and build it)
+
+In this case, we can reduce the waste of machine resources by using Bunshin-no-Jutsu.
+
+This can be done by syncing two directories:
+
+- `~/dev/some-project`: Working directory
+- `~/Dropbox/dev/some-project`: Backup directory to sync with Dropbox
 
 ## Getting Started
 
