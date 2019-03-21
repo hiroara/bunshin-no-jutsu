@@ -6,6 +6,9 @@ locations:
   - ~/Dropbox/dev/rails-app
 
 # Patterns to match with files you want to ignore
+# The format is similar to [.gitignore](https://git-scm.com/docs/gitignore).
+# This feature is implemented with [k8s.io/helm/pkg/ignore](https://godoc.org/k8s.io/helm/pkg/ignore) package,
+# so we follow the specification to the package.
 ignore:
   - node_modules/
   - /log/
