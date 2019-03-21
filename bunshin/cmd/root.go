@@ -16,11 +16,12 @@ var srcDir string
 var rootCmd = &cobra.Command{
 	Use:   "bunshin",
 	Short: "Sync files to another location",
-	Long: `Bunshin is a simple tooljto sync files to anoother location.
+	Long: `Bunshin is a simple tool to sync files to another location.
 This can be used for buckup files to a disk or a directory which is watched by Dropbox or other sync tools.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
 		flags := cmd.Flags()
 		dryrun, err := flags.GetBool("dry-run")
 		if err != nil {
@@ -86,5 +87,4 @@ func initConfig() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Using config file:", viper.ConfigFileUsed())
 }

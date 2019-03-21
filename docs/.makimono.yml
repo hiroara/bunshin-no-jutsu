@@ -1,0 +1,19 @@
+# Directories to sync.
+# When you execute `bunshin` inside one of the directories, the directory you are in is ignored.
+# We recommend specifying multiple directories which are a working directory and (a) backup director{y,ies}.
+locations:
+  - ~/dev/rails-app
+  - ~/Dropbox/dev/rails-app
+
+# Patterns to match with files you want to ignore
+ignore:
+  - node_modules/
+  - /log/
+  - /tmp/
+  - .DS_Store
+  - '*.swp'
+  - /public/packs
+  - /public/packs-test
+
+# If you specify `true`, extraneous files are deleted from destination directories.
+delete: false
