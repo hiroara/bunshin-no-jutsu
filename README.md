@@ -26,6 +26,13 @@ This can be done by syncing two directories:
 
 ## Getting Started
 
+### Install released version (MacOS)
+
+```
+$ sudo curl -o /usr/local/bin/bunshin -sL https://github.com/hiroara/bunshin-no-jutsu/releases/download/1.0.0/bunshin-darwin-amd64 && sudo chmod +x /usr/local/bin/bunshin
+$ bunshin version
+```
+
 ### Installation with build
 
 You can build the executable binary as follows:
