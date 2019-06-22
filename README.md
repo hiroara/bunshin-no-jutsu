@@ -38,7 +38,7 @@ $ bunshin version
 You can build the executable binary as follows:
 
 ```
-$ go install github.com/hiroara/bunshin-no-jutsu/bunshin
+$ go get -u github.com/hiroara/bunshin-no-jutsu/bunshin
 $ bunshin version
 ```
 
